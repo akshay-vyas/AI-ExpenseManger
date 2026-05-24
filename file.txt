@@ -1,0 +1,8 @@
+Add a Terms & Conditions page and a Privacy Policy page to this project @templates/base.html. 
+Do not modify any existing files, styles, logic, or functionality. Only add what is strictly necessary:
+
+Create two new pages/routes: /terms and /privacy
+Add minimal navigation links to these pages (e.g. in the footer if one exists, otherwise just add the links without restructuring anything)
+The content should be standard boilerplate Terms & Conditions and Privacy Policy text suited for an expense tracker app
+Match the existing styling/theme of the app, do not introduce new CSS frameworks or change any existing styles
+Do not touch app.py, database files, or any existing routes/logic

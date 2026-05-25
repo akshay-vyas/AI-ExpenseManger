@@ -1,5 +1,5 @@
-import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3, functools
+from flask import Flask, render_template, request, redirect, url_for, session, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import init_db, seed_db, get_db
 
@@ -9,6 +9,28 @@ app.secret_key = "dev-secret-change-in-prod"
 with app.app_context():
     init_db()
     seed_db()
+
+
+@app.before_request
+def load_user():
+    user_id = session.get("user_id")
+    if user_id:
+        conn = get_db()
+        g.user = conn.execute(
+            "SELECT id, name, email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        conn.close()
+    else:
+        g.user = None
+
+
+def login_required(f):
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        if g.user is None:
+            return redirect(url_for("login", next=request.path))
+        return f(*args, **kwargs)
+    return wrapped
 
 
 # ------------------------------------------------------------------ #
@@ -22,6 +44,8 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if g.user:
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
@@ -52,6 +76,8 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if g.user:
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
@@ -66,6 +92,9 @@ def login():
             return render_template("login.html", error="Invalid email or password.")
 
         session["user_id"] = user["id"]
+        next_url = request.args.get("next", "")
+        if next_url.startswith("/"):
+            return redirect(next_url)
         return redirect(url_for("dashboard"))
 
     return render_template("login.html")
@@ -78,15 +107,9 @@ def logout():
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    conn = get_db()
-    user = conn.execute(
-        "SELECT name FROM users WHERE id = ?", (session["user_id"],)
-    ).fetchone()
-    conn.close()
-    return render_template("dashboard.html", user=user)
+    return render_template("dashboard.html")
 
 
 # ------------------------------------------------------------------ #

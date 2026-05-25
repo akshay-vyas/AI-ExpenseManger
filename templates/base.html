@@ -19,7 +19,7 @@
                 <span class="brand-name">Spendly</span>
             </a>
             <div class="nav-links">
-                {% if session.get('user_id') %}
+                {% if g.user %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
                     <a href="{{ url_for('logout') }}" class="nav-cta">Sign out</a>
                 {% else %}
